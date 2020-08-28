@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+}
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+repositories {
+    maven { url "https://repo.osgeo.org/repository/release/"}
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation group: 'org.geotools', name: 'gt-referencing', version: '23.2'
+    implementation group: 'org.geotools', name: 'gt-main', version: '23.2'
+    implementation group: 'org.geotools', name: 'gt-shapefile', version: '23.2'
+}
