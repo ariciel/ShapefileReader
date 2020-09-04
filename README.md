@@ -4,8 +4,12 @@ A simple ESRI shapefile(`.shp` and/or `.dbf`) reader with GeoTools 23.2.
 (originally copied from [Reference](http://www.gisdeveloper.co.kr/?p=1386),
 and refreshed to current version of GeoTools.)
 
+### Functionality ###
+
+* Read `.shp` or `.dbf` file and print to console
+* Read both `.shp` and `.dbf` files and merge them into single `.csv`.
+
 ### Precautions ###
 
-* Resource files are not in the project,
-so please add resources in `main/src/resources`.
-* Make sure to set your OS, IDE and project support UTF-8.  
+* Pass the absolute path of the directory containing your data as program argument.
+* Make sure to modify settings so that your OS and IDE support UTF-8.  

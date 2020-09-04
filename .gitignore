@@ -50,6 +50,3 @@ Thumbs.db
 
 # Gradle
 .gradle/
-
-build/resources/main/*
-src/main/resources/*

@@ -20,14 +20,8 @@ Reference: http://www.gisdeveloper.co.kr/?p=1386
 public class ShpReader {
     public static void main(String[] args) {
         try {
-            /*
-            AL_36_D168_20200825.shp
-            AL_00_D158_20200207.shp
-            AL_36_D002_20200801.shp
-            */
-            String fileName = "AL_36_D168_20200825.shp";
-            ShpFiles shpFile = new ShpFiles("src/main/resources/" + fileName);
-
+            String fileName = args[0] + args[0].substring(args[0].lastIndexOf("/"));
+            ShpFiles shpFile = new ShpFiles(fileName + ".shp");
             GeometryFactory geometryFactory = new GeometryFactory();
             ShapefileReader r = new ShapefileReader(shpFile, true, false, geometryFactory);
 
