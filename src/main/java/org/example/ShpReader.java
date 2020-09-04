@@ -17,10 +17,16 @@ Shapefile Reader
 Reference: http://www.gisdeveloper.co.kr/?p=1386
  */
 
-public class App {
+public class ShpReader {
     public static void main(String[] args) {
         try {
-            ShpFiles shpFile = new ShpFiles("src/main/resources/AL_36_D002_20200801.shp");
+            /*
+            AL_36_D168_20200825.shp
+            AL_00_D158_20200207.shp
+            AL_36_D002_20200801.shp
+            */
+            String fileName = "AL_36_D168_20200825.shp";
+            ShpFiles shpFile = new ShpFiles("src/main/resources/" + fileName);
 
             GeometryFactory geometryFactory = new GeometryFactory();
             ShapefileReader r = new ShapefileReader(shpFile, true, false, geometryFactory);
@@ -29,7 +35,7 @@ public class App {
                 Record record = r.nextRecord();
                 Geometry shape = (Geometry)record.shape();
                 Point centroid = shape.getCentroid();
-                System.out.println("(" + centroid.getX() + ", " + centroid.getY() + ")");
+                System.out.println(centroid.getX() + ", " + centroid.getY());
             }
             r.close();
         }

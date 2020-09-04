@@ -51,4 +51,5 @@ Thumbs.db
 # Gradle
 .gradle/
 
-build/resources/main/AL_36_D002_20200801.shp
+build/resources/main/*
+src/main/resources/*
