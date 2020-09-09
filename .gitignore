@@ -50,3 +50,5 @@ Thumbs.db
 
 # Gradle
 .gradle/
+
+*.MF

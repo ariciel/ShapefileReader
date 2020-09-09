@@ -11,19 +11,20 @@ import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
 import org.opengis.referencing.FactoryException;
-import org.opengis.referencing.NoSuchAuthorityCodeException;
 import org.opengis.referencing.crs.CRSFactory;
 import org.opengis.referencing.crs.CoordinateReferenceSystem;
 import org.opengis.referencing.operation.MathTransform;
 import org.opengis.referencing.operation.TransformException;
 
 import java.io.*;
-import java.net.MalformedURLException;
 import java.nio.charset.Charset;
 
 /*
 Shapefile to CSV
-.dbf and .shp file have to be in the same directory
+
+Argument(s): 1
+the directory path containing shapefile
+(.dbf, .shp, .prj have to be in the same directory)
 
 Reference:
 http://www.gisdeveloper.co.kr/?p=1386
@@ -36,62 +37,52 @@ public class ShapefileToCSV {
             String fileName = args[0] + args[0].substring(args[0].lastIndexOf("/"));
             ShpFiles shpFile = new ShpFiles(fileName + ".shp");
             GeometryFactory geometryFactory = new GeometryFactory();
-            ShapefileReader sr = new ShapefileReader(shpFile, true, false, geometryFactory);
-            DbaseFileReader dr = new DbaseFileReader(shpFile, false, Charset.forName("EUC-KR"));
-            DbaseFileHeader header = dr.getHeader();
-            int numFields = header.getNumFields();
+            ShapefileReader shpReader = new ShapefileReader(shpFile, true, false, geometryFactory);
+            DbaseFileReader dbfReader = new DbaseFileReader(shpFile, false, Charset.forName("MS949"));
+            BufferedReader prjReader = new BufferedReader(new FileReader(fileName + ".prj"));
+            FileWriter csvWriter = new FileWriter(new File(fileName + ".csv"));
 
-            BufferedReader reader = new BufferedReader(new FileReader(fileName + ".prj"));
-            FileWriter writer = new FileWriter(new File(fileName + ".csv"));
+            // correction for WGS84
+            String sourceWKT = prjReader.readLine();
+            int splitIndex = sourceWKT.lastIndexOf("],PRIMEM");
+            String modWKT = sourceWKT.substring(0, splitIndex)
+                    + ",TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43]"
+                    + sourceWKT.substring(splitIndex);
 
-            String sourceWKT = reader.readLine();
             CRSFactory crsFactory = ReferencingFactoryFinder.getCRSFactory(null);
-            CoordinateReferenceSystem sourceCRS = crsFactory.createFromWKT(sourceWKT);
-            // 3857 for Google Map, 4326 for WGS84
-            CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:4326");
+            CoordinateReferenceSystem sourceCRS = crsFactory.createFromWKT(modWKT);
+            CoordinateReferenceSystem targetCRS = CRS.decode("EPSG:4326"); // EPSG:3857 for Google Map
             MathTransform transform = CRS.findMathTransform(sourceCRS, targetCRS, true);
 
-            writer.append("X, Y, ");
-            for (int iField = 0; iField < numFields - 1; ++iField) {
-                String fieldName = header.getFieldName(iField);
-                writer.append(fieldName).append(", ");
+            // create CSV header
+            DbaseFileHeader header = dbfReader.getHeader();
+            int numFields = header.getNumFields();
+            csvWriter.append("lat, lon, ");
+            for (int i = 0; i < numFields - 1; ++i) {
+                csvWriter.append(header.getFieldName(i)).append(", ");
             }
-            writer.append(header.getFieldName(numFields - 1)).append("\n");
+            csvWriter.append(header.getFieldName(numFields - 1)).append("\n");
 
-            while (sr.hasNext()) {
-                // Can't happen
-                if (!dr.hasNext()) {
-                    // NEED TO FIX
-                    System.out.println("ERROR");
-                    break;
-                }
-                ShapefileReader.Record record = sr.nextRecord();
-                Geometry transCoordGeometry = JTS.transform((Geometry)record.shape(), transform);
+            // merge .shp and .dbf line-by-line
+            while (shpReader.hasNext() && dbfReader.hasNext()) {
+                ShapefileReader.Record record = shpReader.nextRecord();
+                Geometry transCoordGeometry = JTS.transform((Geometry) record.shape(), transform);
                 Point centroid = transCoordGeometry.getCentroid();
-                writer.append(String.valueOf(centroid.getX())).append(", ")
+                csvWriter.append(String.valueOf(centroid.getX())).append(", ")
                         .append(String.valueOf(centroid.getY())).append(", ");
 
-                Object[] values = dr.readEntry();
-                for (int iField = 0; iField < numFields - 1; ++iField) {
-                    writer.append(String.valueOf(values[iField])).append(", ");
+                Object[] values = dbfReader.readEntry();
+                for (int i = 0; i < numFields - 1; ++i) {
+                    csvWriter.append(String.valueOf(values[i])).append(", ");
                 }
-                writer.append(String.valueOf(values[numFields - 1])).append("\n");
+                csvWriter.append(String.valueOf(values[numFields - 1])).append("\n");
             }
+            shpReader.close();
+            dbfReader.close();
+            prjReader.close();
+            csvWriter.close();
 
-            sr.close();
-            dr.close();
-            reader.close();
-            writer.close();
-
-        } catch (MalformedURLException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (NoSuchAuthorityCodeException e) {
-            e.printStackTrace();
-        } catch (FactoryException e) {
-            e.printStackTrace();
-        } catch (TransformException e) {
+        } catch (TransformException | IOException | FactoryException e) {
             e.printStackTrace();
         }
     }
