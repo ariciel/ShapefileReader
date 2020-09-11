@@ -7,6 +7,7 @@ import org.geotools.data.shapefile.shp.ShapefileReader;
 import org.geotools.geometry.jts.JTS;
 import org.geotools.referencing.CRS;
 import org.geotools.referencing.ReferencingFactoryFinder;
+import org.locationtech.jts.geom.Coordinate;
 import org.locationtech.jts.geom.Geometry;
 import org.locationtech.jts.geom.GeometryFactory;
 import org.locationtech.jts.geom.Point;
@@ -45,6 +46,13 @@ public class ShapefileToCSV {
             // correction for WGS84
             String sourceWKT = prjReader.readLine();
             int splitIndex = sourceWKT.lastIndexOf("],PRIMEM");
+
+            // 좌표계가 구식(1985)이라 과거 보정값을 이용해야 합니다.
+            // 아래는 테스트했던 보정값 후보들입니다.
+            //+ ",TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43]"
+            //+ ",TOWGS84[-114.82,475.963,675.018,1.162,-2.347,-1.592,6.342]"
+            //+ ",TOWGS84[-145.907,505.034,685.756,1.162,-2.347,-1.592,6.342]"
+            //+ ",TOWGS84[0,0,0,0,0,0,0]"
             String modWKT = sourceWKT.substring(0, splitIndex)
                     + ",TOWGS84[-115.80,474.99,674.11,1.16,-2.31,-1.63,6.43]"
                     + sourceWKT.substring(splitIndex);
@@ -67,6 +75,7 @@ public class ShapefileToCSV {
             while (shpReader.hasNext() && dbfReader.hasNext()) {
                 ShapefileReader.Record record = shpReader.nextRecord();
                 Geometry transCoordGeometry = JTS.transform((Geometry) record.shape(), transform);
+                Coordinate[] coords = transCoordGeometry.getCoordinates();
                 Point centroid = transCoordGeometry.getCentroid();
                 csvWriter.append(String.valueOf(centroid.getX())).append(", ")
                         .append(String.valueOf(centroid.getY())).append(", ");
